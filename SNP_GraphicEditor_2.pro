@@ -14,12 +14,17 @@ LIBS   += -lopengl32
 LIBS   += -lGLU32
 
 SOURCES += \
+    group3d.cpp \
     main.cpp \
     scene.cpp \
+    simpleobject.cpp \
     window.cpp
 
 HEADERS += \
+    group3d.hpp \
     scene.hpp \
+    simpleobject.hpp \
+    transformational.hpp \
     window.hpp
 
 FORMS += \

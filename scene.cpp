@@ -1,6 +1,8 @@
 #include "scene.hpp"
 
-Scene::Scene(QWidget* parent) : QOpenGLWidget(parent), QOpenGLFunctions(), texture(0), indexBuffer(QOpenGLBuffer::IndexBuffer) {}
+Scene::Scene(QWidget* parent) : QOpenGLWidget(parent), QOpenGLFunctions() {}
+
+void Scene::timerEvent(QTimerEvent* event) {}
 
 void Scene::initializeGL() {
   initializeOpenGLFunctions();
@@ -9,48 +11,68 @@ void Scene::initializeGL() {
   glEnable(GL_CULL_FACE);
 
   initShaders();
-  initCube(1.0f);
+
+  float step = 2.0f;
+
+  groups.append(new Group3d);
+  for (float x = -step; x <= step; x += step) {
+	for (float y = -step; y <= step; y += step) {
+	  for (float z = -step; z <= step; z += step) {
+		initCube(1.0f);
+		objects[objects.size() - 1]->translate(QVector3D(x, y, z));
+		groups[groups.size() - 1]->addObject(objects[objects.size() - 1]);
+	  }
+	}
+  }
+  groups[0]->translate(QVector3D(-4, 0, 0));
+
+  groups.append(new Group3d);
+  for (float x = -step; x <= step; x += step) {
+	for (float y = -step; y <= step; y += step) {
+	  for (float z = -step; z <= step; z += step) {
+		initCube(1.0f);
+		objects[objects.size() - 1]->translate(QVector3D(x, y, z));
+		groups[groups.size() - 1]->addObject(objects[objects.size() - 1]);
+	  }
+	}
+  }
+  groups[1]->translate(QVector3D(4, 0, 0));
+
+  groups.append(new Group3d);
+  groups[2]->addObject(groups[0]);
+  groups[2]->addObject(groups[1]);
+
+  transformObjects.append(groups[2]);
+  /// connect(frameTimer, SIGNAL(timeout()), this, SLOT(update()));
+
+  connect(&timer, SIGNAL(timeout()), this, SLOT(simpleAnimation()));
+  timer.start(30);
 }
 
 void Scene::resizeGL(int w, int h) {
   float aspect = w / (float)h;
   projectionMatrix.setToIdentity();
-  projectionMatrix.perspective(45, aspect, 0.1f, 10.0f);
+  projectionMatrix.perspective(45, aspect, 0.01f, 100.0f);
 }
 
 void Scene::paintGL() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  // showOrts();
 
   QMatrix4x4 viewMatrix;
   viewMatrix.setToIdentity();
-  viewMatrix.translate(0.0, 0.0, -5.0);
+  viewMatrix.translate(0.0, 0.0, dz);
   viewMatrix.rotate(rotation);
-  QMatrix4x4 modelMatrix;
-  modelMatrix.setToIdentity();
-  texture->bind(0);
 
   shaderProgram.bind();
   shaderProgram.setUniformValue("u_projectionMatrix", projectionMatrix);
   shaderProgram.setUniformValue("u_viewMatrix", viewMatrix);
-  shaderProgram.setUniformValue("u_modelMatrix", modelMatrix);
-  shaderProgram.setUniformValue("u_texture", 0);
+  shaderProgram.setUniformValue("u_lightPosition", QVector4D(0.0, 0.0, 0.0, 1.0));
+  shaderProgram.setUniformValue("u_lightPower", 1.0f);
 
-  arrayBuffer.bind();
-
-  int offset = 0;
-
-  int vertLoc = shaderProgram.attributeLocation("a_position");
-  shaderProgram.enableAttributeArray(vertLoc);
-  shaderProgram.setAttributeBuffer(vertLoc, GL_FLOAT, offset, 3, sizeof(VertexData));
-
-  offset += sizeof(QVector3D);
-  int texLoc = shaderProgram.attributeLocation("a_textcoord");
-  shaderProgram.enableAttributeArray(texLoc);
-  shaderProgram.setAttributeBuffer(texLoc, GL_FLOAT, offset, 2, sizeof(VertexData));
-
-  indexBuffer.bind();
-
-  glDrawElements(GL_TRIANGLES, indexBuffer.size(), GL_UNSIGNED_INT, 0);
+  for (int i = 0; i < transformObjects.size(); ++i) {
+	transformObjects[i]->draw(&shaderProgram, context()->functions());
+  }
 }
 
 void Scene::mousePressEvent(QMouseEvent* event) {
@@ -72,6 +94,12 @@ void Scene::mouseMoveEvent(QMouseEvent* event) {
 	  update();
 	  break;
   }
+}
+
+void Scene::wheelEvent(QWheelEvent* event) {
+  if (event->delta() > 0) dz += 0.25;
+  if (event->delta() < 0) dz -= 0.25;
+  update();
 }
 
 void Scene::initShaders() {
@@ -174,19 +202,50 @@ void Scene::initCube(float _width) {
 	indexes.append(i + 3);
   }
 
-  arrayBuffer.create();
-  arrayBuffer.bind();
-  arrayBuffer.allocate(vertexes.constData(), vertexes.size() * sizeof(VertexData));
-  arrayBuffer.release();
+  objects.append(new SimpleObject(vertexes, indexes, QImage(":/sprites/TEST_QUAD.png")));
+}
 
-  indexBuffer.create();
-  indexBuffer.bind();
-  indexBuffer.allocate(indexes.constData(), indexes.size() * sizeof(GLuint));
-  indexBuffer.release();
+void Scene::showOrts() {
+  glLineWidth(5);
+  glBegin(GL_LINES);
+  glColor4f(1.0, 0.0, 0.0, 0.3);
+  glVertex3f(0.0, 0.0, 0.0);
+  glVertex3f(10.0, 0.0, 0.0);
 
-  texture = new QOpenGLTexture(QImage(":/sprites/TEST_QUAD.png").mirrored());
-  texture->setMinificationFilter(QOpenGLTexture::Nearest);
-  // texture->setMinificationFilter(QOpenGLTexture::);
-  texture->setMagnificationFilter(QOpenGLTexture::Nearest);
-  texture->setWrapMode(QOpenGLTexture::Repeat);
+  glColor4f(0.0, 1.0, 0.0, 0.3);
+  glVertex3f(0.0, 0.0, 0.0);
+  glVertex3f(0.0, 10.0, 0.0);
+
+  glColor4f(0.0, 0.0, 1.0, 0.3);
+  glVertex3f(0.0, 0.0, 0.0);
+  glVertex3f(0.0, 0.0, 10.0);
+
+  glEnd();
+}
+
+void Scene::simpleAnimation() {
+  for (int i = 0; i < objects.size(); ++i) {
+	if (i % 2 == 0) {
+	  objects[i]->rotate(QQuaternion::fromAxisAndAngle(1.0, 0.0, 0.0, qSin(angleObject)));
+	  objects[i]->rotate(QQuaternion::fromAxisAndAngle(0.0, 1.0, 0.0, qCos(angleObject)));
+	} else {
+	  objects[i]->rotate(QQuaternion::fromAxisAndAngle(0.0, 1.0, 0.0, qSin(angleObject)));
+	  objects[i]->rotate(QQuaternion::fromAxisAndAngle(1.0, 0.0, 0.0, qCos(angleObject)));
+	}
+  }
+  groups[0]->rotate(QQuaternion::fromAxisAndAngle(0.0, 0.0, 1.0, qCos(angleGroup1)));
+  groups[0]->rotate(QQuaternion::fromAxisAndAngle(0.0, 1.0, 0.0, -qSin(angleGroup1)));
+
+  groups[1]->rotate(QQuaternion::fromAxisAndAngle(1.0, 0.0, 0.0, qCos(angleGroup1)));
+  groups[1]->rotate(QQuaternion::fromAxisAndAngle(0.0, 1.0, 0.0, -qCos(angleGroup1)));
+
+  groups[2]->rotate(QQuaternion::fromAxisAndAngle(1.0, 0.0, 0.0, qSin(angleMain)));
+  groups[2]->rotate(QQuaternion::fromAxisAndAngle(0.0, 1.0, 0.0, qCos(angleMain)));
+
+  angleObject += M_PI / 180.0f;
+  angleGroup1 += M_PI / 180.0f / 2.0f;
+  angleGroup2 += M_PI / 180.0f / 2.0f;
+  angleMain += M_PI / 180.0f / 2.0f;
+
+  update();
 }
