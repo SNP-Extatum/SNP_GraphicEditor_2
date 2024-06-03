@@ -1,10 +1,10 @@
-attribute highp vec4 a_position;
-attribute highp vec2 a_textcoord;
-attribute highp vec3 a_normal;
-uniform highp mat4 u_projectionMatrix;
-uniform highp mat4 u_viewMatrix;
-uniform highp mat4 u_modelMatrix;
-varying highp vec2 v_textcoord;
+attribute vec4 a_position;
+attribute vec2 a_textcoord;
+attribute vec3 a_normal;
+uniform mat4 u_projectionMatrix;
+uniform mat4 u_viewMatrix;
+uniform mat4 u_modelMatrix;
+varying vec2 v_textcoord;
 
 void main(void)
 {

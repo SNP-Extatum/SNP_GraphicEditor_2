@@ -1,7 +1,7 @@
 uniform vec4 u_simpleColor;
 uniform bool u_isTextureUse;
 uniform sampler2D u_texture;
-varying highp vec2 v_textcoord;
+varying vec2 v_textcoord;
 
 
 void main(void)

@@ -1,11 +1,11 @@
 uniform vec4 u_simpleColor;
 uniform bool u_isTextureUse;
 uniform sampler2D u_texture;
-uniform highp vec4 u_lightPosition;
-uniform highp float u_lightPower;
-varying highp vec2 v_textcoord;
-varying highp vec4 v_position;
-varying highp vec3 v_normal;
+uniform vec4 u_lightPosition;
+uniform float u_lightPower;
+varying vec2 v_textcoord;
+varying vec4 v_position;
+varying vec3 v_normal;
 
 void main(void)
 {
