@@ -1,8 +1,8 @@
 #ifndef SCENE_HPP
 #define SCENE_HPP
 
-// #include <QKeyEvent>
-// #include <QMouseEvent>
+ #include <QKeyEvent>
+ #include <QMouseEvent>
 
 #include "camera.hpp"
 #include "cubic.hpp"
