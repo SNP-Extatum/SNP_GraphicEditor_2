@@ -2,5 +2,7 @@
     <qresource prefix="/">
         <file>fragmentShader.fsh</file>
         <file>vertexShader.vsh</file>
+        <file>skybox.vsh</file>
+        <file>skybox.fsh</file>
     </qresource>
 </RCC>

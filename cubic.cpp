@@ -1,15 +1,15 @@
-#include "simpleobject.hpp"
+#include "cubic.hpp"
 
-SimpleObject::SimpleObject() : indexBuffer(QOpenGLBuffer::IndexBuffer), texture(0) { scale = 1.0f; }
+Cubic::Cubic() : indexBuffer(QOpenGLBuffer::IndexBuffer), texture(0) { scale = 1.0f; }
 
-SimpleObject::SimpleObject(const QVector<VertexData>& vertData, const QVector<GLuint>& indexes, const QImage& _texture)
+Cubic::Cubic(const QVector<VertexData>& vertData, const QVector<GLuint>& indexes, const QImage& _texture)
 	: indexBuffer(QOpenGLBuffer::IndexBuffer), texture(0) {
   scale = 1.0f;
 
   init(vertData, indexes, _texture);
 }
 
-SimpleObject::~SimpleObject() {
+Cubic::~Cubic() {
   if (vertexBuffer.isCreated()) vertexBuffer.destroy();
   if (indexBuffer.isCreated()) indexBuffer.destroy();
   if (texture != 0) {
@@ -19,7 +19,7 @@ SimpleObject::~SimpleObject() {
   }
 }
 
-void SimpleObject::init(const QVector<VertexData>& vertData, const QVector<GLuint>& indexes, const QImage& _texture) {
+void Cubic::init(const QVector<VertexData>& vertData, const QVector<GLuint>& indexes, const QImage& _texture) {
   if (vertexBuffer.isCreated()) vertexBuffer.destroy();
   if (indexBuffer.isCreated()) indexBuffer.destroy();
   if (texture != 0) {
@@ -27,6 +27,7 @@ void SimpleObject::init(const QVector<VertexData>& vertData, const QVector<GLuin
 	  delete texture;
 	  texture = 0;
 	}
+	simpleColor = QColor(100, 50, 120);
   }
 
   vertexBuffer.create();
@@ -46,12 +47,16 @@ void SimpleObject::init(const QVector<VertexData>& vertData, const QVector<GLuin
   texture->setWrapMode(QOpenGLTexture::Repeat);
 }
 
-void SimpleObject::draw(QOpenGLShaderProgram* shaderProgram, QOpenGLFunctions* functions) {
+void Cubic::draw(QOpenGLShaderProgram* shaderProgram, QOpenGLFunctions* functions) {
   if (!vertexBuffer.isCreated() || !indexBuffer.isCreated()) return;
 
-  texture->bind(0);
-  shaderProgram->setUniformValue("u_texture", 0);
-
+  if (is_textureUse) {
+	texture->bind(0);
+	shaderProgram->setUniformValue("u_texture", 0);
+  } else {
+	shaderProgram->setUniformValue("u_simpleColor", QVector4D(simpleColor.red(), simpleColor.green(), simpleColor.blue(), simpleColor.alphaF()));
+	shaderProgram->setUniformValue("u_isTextureUse", is_textureUse);
+  }
   QMatrix4x4 modelMatrix;
   modelMatrix.setToIdentity();
   modelMatrix.translate(translation);
@@ -88,10 +93,10 @@ void SimpleObject::draw(QOpenGLShaderProgram* shaderProgram, QOpenGLFunctions* f
   texture->release();
 }
 
-void SimpleObject::rotate(const QQuaternion& rot) { rotation = rot * rotation; }
+void Cubic::rotate(const QQuaternion& rot) { rotation = rot * rotation; }
 
-void SimpleObject::translate(const QVector3D& trans) { translation += trans; }
+void Cubic::translate(const QVector3D& trans) { translation += trans; }
 
-void SimpleObject::scaleIt(const float& scaling) { scale *= scaling; }
+void Cubic::scaleIt(const float& scaling) { scale *= scaling; }
 
-void SimpleObject::setGlobalTransform(const QMatrix4x4& mat) { globalTransform = mat; }
+void Cubic::setGlobalTransform(const QMatrix4x4& mat) { globalTransform = mat; }

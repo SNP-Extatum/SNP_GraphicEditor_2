@@ -1,8 +1,34 @@
 #include "scene.hpp"
 
-Scene::Scene(QWidget* parent) : QOpenGLWidget(parent), QOpenGLFunctions() {}
+Scene::Scene(QWidget* parent) : QOpenGLWidget(parent), QOpenGLFunctions() {
+  camera = new Camera();
+  camera->translate(QVector3D(0, 0, -5));
+}
 
-void Scene::timerEvent(QTimerEvent* event) {}
+Scene::~Scene() {
+  delete camera;
+
+  for (int i = 0; i < objects.size(); ++i) {
+	delete objects[i];
+  }
+  for (int i = 0; i < groups.size(); ++i) {
+	delete groups[i];
+  }
+  for (int i = 0; i < transformObjects.size(); ++i) {
+	delete transformObjects[i];
+  }
+}
+
+void Scene::createStarHouse(int countStars) {
+  for (int i = 0; i < objects.size(); ++i) {
+	delete objects[i];
+  }
+  objects.clear();
+  initCube(5);
+  update();
+}
+
+void Scene::timerEvent(QTimerEvent* event) { Q_UNUSED(event) }
 
 void Scene::initializeGL() {
   initializeOpenGLFunctions();
@@ -15,11 +41,12 @@ void Scene::initializeGL() {
   float step = 2.0f;
 
   groups.append(new Group3d);
+
   for (float x = -step; x <= step; x += step) {
 	for (float y = -step; y <= step; y += step) {
 	  for (float z = -step; z <= step; z += step) {
 		initCube(1.0f);
-		objects[objects.size() - 1]->translate(QVector3D(x, y, z));
+		objects[objects.size() - 1]->translate(QVector3D(x - 4, y, z));
 		groups[groups.size() - 1]->addObject(objects[objects.size() - 1]);
 	  }
 	}
@@ -31,7 +58,7 @@ void Scene::initializeGL() {
 	for (float y = -step; y <= step; y += step) {
 	  for (float z = -step; z <= step; z += step) {
 		initCube(1.0f);
-		objects[objects.size() - 1]->translate(QVector3D(x, y, z));
+		objects[objects.size() - 1]->translate(QVector3D(x + 4, y, z));
 		groups[groups.size() - 1]->addObject(objects[objects.size() - 1]);
 	  }
 	}
@@ -43,7 +70,9 @@ void Scene::initializeGL() {
   groups[2]->addObject(groups[1]);
 
   transformObjects.append(groups[2]);
-  /// connect(frameTimer, SIGNAL(timeout()), this, SLOT(update()));
+  // transformObjects.append(camera);
+  // groups[0]->addObject(camera);
+  skybox = new SkyBox(100, QImage(":/sprites/skybox_day3.png"));
 
   connect(&timer, SIGNAL(timeout()), this, SLOT(simpleAnimation()));
   timer.start(30);
@@ -52,27 +81,89 @@ void Scene::initializeGL() {
 void Scene::resizeGL(int w, int h) {
   float aspect = w / (float)h;
   projectionMatrix.setToIdentity();
-  projectionMatrix.perspective(45, aspect, 0.01f, 100.0f);
+  projectionMatrix.perspective(45, aspect, 0.01f, 1000.0f);
 }
 
 void Scene::paintGL() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   // showOrts();
 
-  QMatrix4x4 viewMatrix;
-  viewMatrix.setToIdentity();
-  viewMatrix.translate(0.0, 0.0, dz);
-  viewMatrix.rotate(rotation);
+  shaderSkyBox.bind();
+  shaderSkyBox.setUniformValue("u_projectionMatrix", projectionMatrix);
+  shaderSkyBox.setUniformValue(
+	  "u_simpleColor", QVector4D(skybox->simpleColor.red(), skybox->simpleColor.green(), skybox->simpleColor.blue(), skybox->simpleColor.alphaF()));
+  shaderSkyBox.setUniformValue("u_isTextureUse", skybox->is_textureUse);
+  camera->draw(&shaderSkyBox);
+  skybox->draw(&shaderSkyBox, context()->functions());
+  shaderProgram.release();
 
   shaderProgram.bind();
   shaderProgram.setUniformValue("u_projectionMatrix", projectionMatrix);
-  shaderProgram.setUniformValue("u_viewMatrix", viewMatrix);
   shaderProgram.setUniformValue("u_lightPosition", QVector4D(0.0, 0.0, 0.0, 1.0));
   shaderProgram.setUniformValue("u_lightPower", 1.0f);
+
+  camera->draw(&shaderProgram);
+
+  // for (int i = 0; i < objects.size(); ++i) {
+  //  objects[i]->draw(&shaderProgram, context()->functions());
+  //}
 
   for (int i = 0; i < transformObjects.size(); ++i) {
 	transformObjects[i]->draw(&shaderProgram, context()->functions());
   }
+
+  shaderProgram.release();
+}
+
+void Scene::keyPressEvent(QKeyEvent* event) {
+  switch (event->key()) {
+	case Qt::Key_Tab:
+	  selectNextGroupForCamera();
+	  break;
+	case Qt::Key_W:
+	  controllers.forward = true;
+	  break;
+	case Qt::Key_A:
+	  controllers.left = true;
+	  break;
+	case Qt::Key_S:
+	  controllers.back = true;
+	  break;
+	case Qt::Key_D:
+	  controllers.right = true;
+	  break;
+	case Qt::Key_Shift:
+	  controllers.up = true;
+	  break;
+	case Qt::Key_Space:
+	  controllers.down = true;
+	  break;
+  }
+  update();
+}
+
+void Scene::keyReleaseEvent(QKeyEvent* event) {
+  switch (event->key()) {
+	case Qt::Key_W:
+	  controllers.forward = false;
+	  break;
+	case Qt::Key_A:
+	  controllers.left = false;
+	  break;
+	case Qt::Key_S:
+	  controllers.back = false;
+	  break;
+	case Qt::Key_D:
+	  controllers.right = false;
+	  break;
+	case Qt::Key_Shift:
+	  controllers.up = false;
+	  break;
+	case Qt::Key_Space:
+	  controllers.down = false;
+	  break;
+  }
+  update();
 }
 
 void Scene::mousePressEvent(QMouseEvent* event) {
@@ -81,6 +172,7 @@ void Scene::mousePressEvent(QMouseEvent* event) {
 	  mousePos = QVector2D(event->localPos());
 	  break;
   }
+  update();
 }
 
 void Scene::mouseMoveEvent(QMouseEvent* event) {
@@ -88,17 +180,19 @@ void Scene::mouseMoveEvent(QMouseEvent* event) {
 	case Qt::RightButton:
 	  QVector2D diff = QVector2D(event->localPos()) - mousePos;
 	  mousePos = QVector2D(event->localPos());
-	  float angle = diff.length() / mouseSpeed;
-	  QVector3D axis = QVector3D(diff.y(), diff.x(), 0.0);
-	  rotation = QQuaternion::fromAxisAndAngle(axis, angle) * rotation;
+	  float angleX = diff.y() / mouseSpeed;
+	  float angleY = diff.x() / mouseSpeed;
+	  camera->rotateX(QQuaternion::fromAxisAndAngle(1.0, 0.0, 0.0, angleX));
+	  camera->rotateY(QQuaternion::fromAxisAndAngle(0.0, 1.0, 0.0, angleY));
 	  update();
 	  break;
   }
 }
 
 void Scene::wheelEvent(QWheelEvent* event) {
-  if (event->delta() > 0) dz += 0.25;
-  if (event->delta() < 0) dz -= 0.25;
+  if (event->delta() > 0) camera->translate(QVector3D(0, 0, 0.25));
+  if (event->delta() < 0) camera->translate(QVector3D(0, 0, -0.25));
+  ;
   update();
 }
 
@@ -112,6 +206,19 @@ void Scene::initShaders() {
 	close();
   }
   if (!shaderProgram.link()) {
+	qDebug() << "Ошибка линковки";
+	close();
+  }
+
+  if (!shaderSkyBox.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/skybox.vsh")) {
+	qDebug() << "Ошибка компиляции вершинного шейдера";
+	close();
+  }
+  if (!shaderSkyBox.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/skybox.fsh")) {
+	qDebug() << "Ошибка компиляции фрагментного шейдера";
+	close();
+  }
+  if (!shaderSkyBox.link()) {
 	qDebug() << "Ошибка линковки";
 	close();
   }
@@ -202,7 +309,7 @@ void Scene::initCube(float _width) {
 	indexes.append(i + 3);
   }
 
-  objects.append(new SimpleObject(vertexes, indexes, QImage(":/sprites/TEST_QUAD.png")));
+  objects.append(new Cubic(vertexes, indexes, QImage(":/sprites/TEST_QUAD.png")));
 }
 
 void Scene::showOrts() {
@@ -222,6 +329,8 @@ void Scene::showOrts() {
 
   glEnd();
 }
+
+void Scene::selectNextGroupForCamera() {}
 
 void Scene::simpleAnimation() {
   for (int i = 0; i < objects.size(); ++i) {

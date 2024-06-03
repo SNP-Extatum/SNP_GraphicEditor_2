@@ -13,10 +13,17 @@ class Window : public QMainWindow {
   Q_OBJECT
 
  public:
-  Window(QWidget *parent = nullptr);
+  Window(QWidget* parent = nullptr);
   ~Window();
 
+ protected:
+  void keyPressEvent(QKeyEvent* event) override;
+  void keyReleaseEvent(QKeyEvent* event) override;
+
+ private slots:
+  void on_create_starHouse_triggered();
+
  private:
-  Ui::Window *ui;
+  Ui::Window* ui;
 };
 #endif  // WINDOW_HPP

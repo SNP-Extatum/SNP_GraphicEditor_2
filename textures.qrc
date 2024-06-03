@@ -1,5 +1,9 @@
 <RCC>
     <qresource prefix="/">
         <file>sprites/TEST_QUAD.png</file>
+        <file>sprites/skybox(test).png</file>
+        <file>sprites/skybox_day.png</file>
+        <file>sprites/skybox_day2.png</file>
+        <file>sprites/skybox_day3.png</file>
     </qresource>
 </RCC>

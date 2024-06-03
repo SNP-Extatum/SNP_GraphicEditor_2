@@ -14,16 +14,20 @@ LIBS   += -lopengl32
 LIBS   += -lGLU32
 
 SOURCES += \
+    camera.cpp \
+    cubic.cpp \
     group3d.cpp \
     main.cpp \
     scene.cpp \
-    simpleobject.cpp \
+    skybox.cpp \
     window.cpp
 
 HEADERS += \
+    camera.hpp \
+    cubic.hpp \
     group3d.hpp \
     scene.hpp \
-    simpleobject.hpp \
+    skybox.hpp \
     transformational.hpp \
     window.hpp
 

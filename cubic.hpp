@@ -1,5 +1,5 @@
-#ifndef SIMPLEOBJECT_HPP
-#define SIMPLEOBJECT_HPP
+#ifndef CUBIC_H
+#define CUBIC_H
 
 #include "transformational.hpp"
 
@@ -11,11 +11,11 @@ struct VertexData {
   QVector3D normal;
 };
 
-class SimpleObject : public Transformational {
+class Cubic : public Transformational {
  public:
-  SimpleObject();
-  SimpleObject(const QVector<VertexData> &vertData, const QVector<GLuint> &indexes, const QImage &_texture);
-  ~SimpleObject();
+  Cubic();
+  Cubic(const QVector<VertexData> &vertData, const QVector<GLuint> &indexes, const QImage &_texture);
+  ~Cubic();
   void init(const QVector<VertexData> &vertData, const QVector<GLuint> &indexes, const QImage &_texture);
 
   void draw(QOpenGLShaderProgram *shaderProgram, QOpenGLFunctions *functions) override;
@@ -35,4 +35,4 @@ class SimpleObject : public Transformational {
   QMatrix4x4 globalTransform;
 };
 
-#endif  // SIMPLEOBJECT_HPP
+#endif  // CUBIC_H

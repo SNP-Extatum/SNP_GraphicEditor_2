@@ -1,3 +1,5 @@
+uniform vec4 u_simpleColor;
+uniform bool u_isTextureUse;
 uniform sampler2D u_texture;
 uniform highp vec4 u_lightPosition;
 uniform highp float u_lightPower;
@@ -9,7 +11,10 @@ void main(void)
 {
   vec4 resulColor = vec4(0.0,0.0,0.0,0.0);
   vec4 eyePosition = vec4(0.0,0.0,0.0,1.0);
-  vec4 diffMatColor = texture2D(u_texture, v_textcoord);
+  vec4 diffMatColor;
+  //if (u_isTextureUse){
+    diffMatColor = texture2D(u_texture, v_textcoord);
+  //} else { diffMatColor = u_simpleColor;}
   vec3 eyeVect = normalize(v_position.xyz - eyePosition.xyz);
   vec3 lightVect = normalize(v_position.xyz - u_lightPosition.xyz);
   vec3 reflectLight = normalize(reflect(lightVect, v_normal));

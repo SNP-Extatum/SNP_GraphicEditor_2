@@ -17,11 +17,17 @@ class Group3d : public Transformational {
 
   void addObject(Transformational* obj);
 
+  void delObject(Transformational* obj);
+  void delObject(const int& index);
+
+  void updateLocalMatrix();
+
  private:
   QQuaternion rotation;
   QVector3D translation;
   float scale;
   QMatrix4x4 globalTransform;
+  QMatrix4x4 localMatrix;
 
   QVector<Transformational*> objects;
 };

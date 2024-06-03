@@ -1,13 +1,29 @@
 #ifndef SCENE_HPP
 #define SCENE_HPP
 
+// #include <QKeyEvent>
+// #include <QMouseEvent>
+
+#include "camera.hpp"
+#include "cubic.hpp"
 #include "group3d.hpp"
-#include "simpleobject.hpp"
+#include "skybox.hpp"
+
+struct Controllers {
+  bool forward = false;
+  bool back = false;
+  bool right = false;
+  bool left = false;
+  bool up = false;
+  bool down = false;
+};
 
 class Scene : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
  public:
   Scene(QWidget* parent = 0);
+  ~Scene();
+  void createStarHouse(int countStars);
 
   // QObject interface
  protected:
@@ -20,6 +36,10 @@ class Scene : public QOpenGLWidget, protected QOpenGLFunctions {
   void paintGL() override;
 
   // QWidget interface
+ public:
+  void keyPressEvent(QKeyEvent* event) override;
+  void keyReleaseEvent(QKeyEvent* event) override;
+
  protected:
   void mousePressEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
@@ -32,11 +52,12 @@ class Scene : public QOpenGLWidget, protected QOpenGLFunctions {
  private:
   QMatrix4x4 projectionMatrix;         // матрица проекции
   QOpenGLShaderProgram shaderProgram;  // шейдеры
+  QOpenGLShaderProgram shaderSkyBox;
+
   QVector2D mousePos;
   float mouseSpeed = 2.0f;
-  QQuaternion rotation;
 
-  QVector<SimpleObject*> objects;
+  QVector<Cubic*> objects;
   QVector<Transformational*> transformObjects;
   QVector<Group3d*> groups;
 
@@ -48,7 +69,11 @@ class Scene : public QOpenGLWidget, protected QOpenGLFunctions {
   float angleGroup2;
   float angleMain;
 
-  float dz = -5;
+  Camera* camera;
+  SkyBox* skybox;
+  void selectNextGroupForCamera();
+  Controllers controllers;
+
  public slots:
   void simpleAnimation();
 
