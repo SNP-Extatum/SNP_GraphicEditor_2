@@ -90,8 +90,8 @@ void Scene::paintGL() {
 
   shaderSkyBox.bind();
   shaderSkyBox.setUniformValue("u_projectionMatrix", projectionMatrix);
-  shaderSkyBox.setUniformValue(
-	  "u_simpleColor", QVector4D(skybox->simpleColor.red(), skybox->simpleColor.green(), skybox->simpleColor.blue(), skybox->simpleColor.alphaF()));
+  shaderSkyBox.setUniformValue("u_simpleColor", QVector4D((float)skybox->simpleColor.red(), (float)skybox->simpleColor.green(),
+														  (float)skybox->simpleColor.blue(), (float)skybox->simpleColor.alphaF()));
   shaderSkyBox.setUniformValue("u_isTextureUse", skybox->is_textureUse);
   camera->draw(&shaderSkyBox);
   skybox->draw(&shaderSkyBox, context()->functions());

@@ -54,7 +54,8 @@ void Cubic::draw(QOpenGLShaderProgram* shaderProgram, QOpenGLFunctions* function
 	texture->bind(0);
 	shaderProgram->setUniformValue("u_texture", 0);
   } else {
-	shaderProgram->setUniformValue("u_simpleColor", QVector4D(simpleColor.red(), simpleColor.green(), simpleColor.blue(), simpleColor.alphaF()));
+	shaderProgram->setUniformValue(
+		"u_simpleColor", QVector4D((float)simpleColor.red(), (float)simpleColor.green(), (float)simpleColor.blue(), (float)simpleColor.alphaF()));
 	shaderProgram->setUniformValue("u_isTextureUse", is_textureUse);
   }
   QMatrix4x4 modelMatrix;
